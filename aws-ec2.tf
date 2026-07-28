@@ -1,14 +1,14 @@
 # configured aws provider with proper credentials
 provider "aws" {
-  region    = var.aws_region
-  profile   = "default"
+  region  = var.aws_region
+  profile = "default"
 }
 
 # create default vpc if one does not exit
 resource "aws_default_vpc" "default_vpc" {
 
-  tags    = {
-    Name  = "default vpc"
+  tags = {
+    Name = "default vpc"
   }
 }
 
@@ -19,7 +19,7 @@ data "aws_availability_zones" "available_zones" {}
 resource "aws_default_subnet" "default_az1" {
   availability_zone = data.aws_availability_zones.available_zones.names[0]
 
-  tags   = {
+  tags = {
     Name = "default subnet"
   }
 }
@@ -32,30 +32,30 @@ resource "aws_security_group" "jenkins_ec2_security_group" {
 
   # allow access on port 8080 for Jenkins Server
   ingress {
-    description      = "http proxy access"
-    from_port        = 8080
-    to_port          = 8080
-    protocol         = "tcp"
-    cidr_blocks      = ["0.0.0.0/0"]
+    description = "http proxy access"
+    from_port   = 8080
+    to_port     = 8080
+    protocol    = "tcp"
+    cidr_blocks = ["0.0.0.0/0"]
   }
 
   # allow access on port 22 ssh connection
   ingress {
-    description      = "ssh access"
-    from_port        = 22
-    to_port          = 22
-    protocol         = "tcp"
-    cidr_blocks      = ["0.0.0.0/0"]
+    description = "ssh access"
+    from_port   = 22
+    to_port     = 22
+    protocol    = "tcp"
+    cidr_blocks = ["0.0.0.0/0"]
   }
 
   egress {
-    from_port        = 0
-    to_port          = 0
-    protocol         = -1
-    cidr_blocks      = ["0.0.0.0/0"]
+    from_port   = 0
+    to_port     = 0
+    protocol    = -1
+    cidr_blocks = ["0.0.0.0/0"]
   }
 
-  tags   = {
+  tags = {
     Name = "jenkins server security group"
   }
 }
@@ -64,7 +64,7 @@ resource "aws_security_group" "jenkins_ec2_security_group" {
 data "aws_ami" "amazon_linux_2" {
   most_recent = true
   owners      = ["amazon"]
-  
+
   filter {
     name   = "owner-alias"
     values = ["amazon"]
@@ -83,7 +83,7 @@ resource "tls_private_key" "jenkins_key" {
 }
 # Create the Key Pair
 resource "aws_key_pair" "jenkins_key" {
-  key_name   = "jenkins_key_pair"  
+  key_name   = "jenkins_key_pair"
   public_key = tls_private_key.jenkins_key.public_key_openssh
 }
 # Save file
@@ -99,7 +99,7 @@ resource "aws_instance" "ec2_instance" {
   subnet_id              = aws_default_subnet.default_az1.id
   vpc_security_group_ids = [aws_security_group.jenkins_ec2_security_group.id]
   key_name               = aws_key_pair.jenkins_key.key_name
-  user_data            = file("installjenkins.sh")
+  user_data              = file("installjenkins.sh")
 
   tags = {
     Name = "Jenkins Server and ssh security group"
@@ -122,10 +122,10 @@ resource "null_resource" "name" {
 
 # print the url of the jenkins server
 output "jenkins_url" {
-  value     = join ("", ["http://", aws_instance.ec2_instance.public_dns, ":", "8080"])
+  value = join("", ["http://", aws_instance.ec2_instance.public_dns, ":", "8080"])
 }
 
 # print the url of the jenkins server
 output "ssh_connection_command" {
-  value     = join ("", ["ssh -i jenkins_key_pair.pem ec2-user@", aws_instance.ec2_instance.public_dns])
+  value = join("", ["ssh -i jenkins_key_pair.pem ec2-user@", aws_instance.ec2_instance.public_dns])
 }
